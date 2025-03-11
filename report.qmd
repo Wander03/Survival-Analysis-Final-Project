@@ -21,6 +21,11 @@ tele <- read_csv(here("data", "Telco-Customer-Churn.csv"))
 # Data Cleaning
 
 ```{r}
+# Convert character columns to factors
+tele <- tele %>%
+  mutate(across(where(~length(unique(.)) < 4), ~ as.factor(.)))
+
+# Check missing data
 tele %>%
   filter(if_any(everything(), is.na))
 ```
