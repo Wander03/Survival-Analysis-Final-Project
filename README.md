@@ -1,10 +1,3 @@
----
-title: "Telco Customer Churn Dataset"
-author: "IBM"
-date: "2025-03-10"
-format: html
----
-
 # Telco Customer Churn Dataset
 
 The **Telco Customer Churn** dataset is a fictional dataset created by IBM to simulate customer data for a telecommunications company. This dataset was designed to help predict customer churn, referring to customers who stop using the company’s services, with the goal of analyzing customer behavior and developing strategies to retain customers. 
