@@ -1,0 +1,27 @@
+---
+title: "Final Project Report"
+author: "Kyle Bistrain, Dechen (Abby) Drongpa, Andrew Kerr, Liam Quach"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+#| include: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(here)
+library(survival)
+
+tele <- read_csv(here("data", "Telco-Customer-Churn.csv"))
+```
+
+# Data Cleaning
+
+```{r}
+tele %>%
+  filter(if_any(everything(), is.na))
+```
+
