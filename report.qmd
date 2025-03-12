@@ -7,6 +7,7 @@ embed-resources: true
 ---
 
 ```{r}
+#| label: library & data set up
 #| include: false
 #| message: false
 #| warning: false
@@ -18,15 +19,84 @@ library(survival)
 tele <- read_csv(here("data", "Telco-Customer-Churn.csv"))
 ```
 
-# Data Cleaning
-
 ```{r}
+#| label: data cleaning
+#| include: false
+
 # Convert character columns to factors
+# Convert Churn (censoring variable) to 1 if right censored, otherwise 0
 tele <- tele %>%
-  mutate(across(where(~length(unique(.)) < 4), ~ as.factor(.)))
+  mutate(
+    across(where(~length(unique(.)) < 4), ~ as.factor(.)),
+    Churn = case_when(
+      Churn == "Yes" ~ 0,
+      Churn == "No" ~ 1,
+      TRUE ~ NA
+      )
+    ) 
 
 # Check missing data
+#
+#   All 11 subjects are missing TotalCharges and have Churn = 0 and tenure = 0, 
+#   so I am guessing that they are brand new customers. THus, will impute 
+#   missing  values with 0.
+#
 tele %>%
   filter(if_any(everything(), is.na))
+
+tele <- tele %>%
+  mutate(TotalCharges = replace_na(TotalCharges, 0))
+
+# write_csv(tele, here("data", "Telco-Customer-Churn-Clean.csv"))
 ```
+
+```{r}
+#| label: data exploration
+#| include:  false
+
+tele %>%
+  ggplot(aes(x = tenure)) +
+  geom_histogram(bins = 40, fill = "cornflowerblue", color = "black")
+  
+
+tele %>%
+  filter(Churn == 0) %>%
+  ggplot(aes(x = tenure)) +
+  geom_histogram(bins = 40, fill = "cornflowerblue", color = "black")
+
+tele %>%
+  filter(Churn == 1) %>%
+  ggplot(aes(x = tenure)) +
+  geom_histogram(bins = 40, fill = "cornflowerblue", color = "black")
+```
+
+
+# Introduction
+
+[Look at README and put formatted info here]
+
+# Main Report
+## Parametric Survival Analysis
+
+TODO:
+- select distribution -> explain why
+- construct survival and hazard functions for all obs -> describe observations
+- examine survival functions for different groups of interest and report
+- report mean and median survival times for all obs & examined groups
+
+```{r}
+
+```
+
+
+## Non-parametric Survival Analysis
+
+
+
+## Regression Analysis
+
+
+
+# Conclusion
+
 
