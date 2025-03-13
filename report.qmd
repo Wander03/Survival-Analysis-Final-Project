@@ -28,6 +28,7 @@ tele <- read_csv(here("data", "Telco-Customer-Churn-Clean.csv"))
 ```{r}
 #| label: data cleaning
 #| include: false
+#| eval: false
 
 # Convert character columns to factors
 # Convert Churn (censoring variable) to 0 if right censored, otherwise 1
