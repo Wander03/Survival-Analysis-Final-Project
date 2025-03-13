@@ -20,6 +20,7 @@ embed-resources: true
 library(tidyverse)
 library(here)
 library(survival)
+library(survminer)
 
 tele <- read_csv(here("data", "Telco-Customer-Churn-Clean.csv"))
 ```
@@ -29,13 +30,13 @@ tele <- read_csv(here("data", "Telco-Customer-Churn-Clean.csv"))
 #| include: false
 
 # Convert character columns to factors
-# Convert Churn (censoring variable) to 1 if right censored, otherwise 0
+# Convert Churn (censoring variable) to 0 if right censored, otherwise 1
 tele <- tele %>%
   mutate(
     across(where(~length(unique(.)) < 4), ~ as.factor(.)),
     Churn = case_when(
-      Churn == "Yes" ~ 0,
-      Churn == "No" ~ 1,
+      Churn == "Yes" ~ 1,
+      Churn == "No" ~ 0,
       TRUE ~ NA
       )
     ) 
@@ -132,19 +133,8 @@ In this section, we employ non-parametric methods to analyze customer churn patt
 ### Overall Survival Experience
 
 ```{r}
-#| include: false
-library(survival)
-library(survminer)
-# Assume your data frame is called telco_df, 
-# with columns: time_var, event_var, Gender, MultiplePhoneLines, PaymentMethod.
-tele <- read_csv(here("data", "Telco-Customer-Churn-Clean.csv"))
-# 1. Fit the overall Kaplan-Meier
-```
-
-```{r}
 km_fit_all <- survfit(Surv(tenure, Churn) ~ 1, data = tele)
 
-# 3. Plot
 ggsurvplot(km_fit_all, 
            data = tele,
            xlab = "Time", 
@@ -152,10 +142,9 @@ ggsurvplot(km_fit_all,
            title = "Kaplan-Meier Curve - Overall")
 ```
 
-
 Our non-parametric analysis reveals that the median survival time (time at which 50% of customers have churned) across all customers is 44 months, considerably shorter than the 124.766 months estimated by the Weibull model. This substantial difference suggests that the parametric approach may be overestimating customer retention times.
 
-The Kaplan-Meier survival curve shows a steep decrease in survival probability during the first few months of service, indicating that new customers are at high risk of churning early in their relationship with the company. 
+The Kaplan-Meier survival curve shows a steep decrease in survival probability during the first few months of service, indicating that new customers are at high risk of churning early in their relationship with the company.
 
 ### Survival by Gender
 
@@ -167,6 +156,7 @@ ggsurvplot(km_fit_gender,
            pval = TRUE,
            title = "Kaplan-Meier Curves by Payment Method")
 ```
+
 ```{r}
 #| include: false
 
@@ -180,8 +170,8 @@ When analyzing customer churn by gender using the Kaplan-Meier method, we found 
 
 | Gender | Median Survival (months) | Mean Survival (months) |
 |--------|--------------------------|------------------------|
-| Male   | 44                       | 40.9                  |
-| Female | 45                       | 41.2                  |
+| Male   | 44                       | 40.9                   |
+| Female | 45                       | 41.2                   |
 
 The log-rank test comparing male and female survival curves yields a p-value of 0.8. This indicates no statistically significant difference in survival patterns between genders, suggesting that gender has virtually no impact on customer retention rates.
 
@@ -197,6 +187,7 @@ ggsurvplot(km_fit_lines,
            pval = TRUE,
            title = "Kaplan-Meier Curves by Multiple Phone Lines")
 ```
+
 ```{r}
 #| include: false
 ### log-rank test
@@ -208,14 +199,13 @@ The Kaplan-Meier analysis by phone service configuration revealed meaningful dif
 
 | Phone Service    | Median Survival (months) | Mean Survival (months) |
 |------------------|--------------------------|------------------------|
-| No phone service | 42                       | 39.9                  |
-| Single line      | 27                       | 31.5                  |
-| Multiple lines   | 58                       | 51.3                  |
+| No phone service | 42                       | 39.9                   |
+| Single line      | 27                       | 31.5                   |
+| Multiple lines   | 58                       | 51.3                   |
 
 The log-rank test comparing these groups yielded a highly significant p-value (p \< 0.00001), confirming substantial differences in survival patterns across these customer segments.
 
 Interestingly, these non-parametric results contradict our parametric findings. In the Weibull analysis, customers with fewer phone lines showed better retention, with mean survival times of 431.113 months (no phone service), 387.146 months (one line), and 194.881 months (multiple lines). In contrast, our non-parametric analysis suggests that customers with multiple lines have better retention than those with a single line.
-
 
 ### Survival by Payment Method
 
@@ -227,6 +217,7 @@ ggsurvplot(km_fit_payment,
            pval = TRUE,
            title = "Kaplan-Meier Curves by Payment Method")
 ```
+
 ```{r}
 #| include: false
 survdiff(Surv(tenure, Churn) ~ PaymentMethod, data = tele, rho = 0)
@@ -238,32 +229,31 @@ Our non-parametric analysis by payment method revealed substantial differences i
 
 | Payment Method   | Median Survival (months) | Mean Survival (months) |
 |------------------|--------------------------|------------------------|
-| Bank transfer    | 54                       | 48.9                  |
-| Credit card      | 53                       | 47.9                  |
-| Electronic check | 42                       | 39.7                  |
-| Mailed check     | 22                       | 27.0                  |
+| Bank transfer    | 54                       | 48.9                   |
+| Credit card      | 53                       | 47.9                   |
+| Electronic check | 42                       | 39.7                   |
+| Mailed check     | 22                       | 27.0                   |
 
 The log-rank test comparing these payment methods yielded a p-value \< 0.00001, indicating highly significant differences in survival patterns across these customer segments.
 
 Our non-parametric findings partially align with the parametric results in identifying electronic check as a payment method associated with shorter customer tenure. However, they contradict the parametric finding that mailed check customers have the longest retention. In our non-parametric analysis, automatic payment methods (bank transfer and credit card) show the best retention, while mailed check customers have the poorest retention.
 
-
 ### Comparison with Parametric Analysis
 
 To better understand the differences between our non-parametric and parametric approaches, we directly compared the survival time estimates produced by both methods:
 
-| Customer Group   | Non-parametric Median (months) | Parametric Median (months) | Difference (%) |
-|----------------|----------------------|--------------------|----------------|
-| Overall          | 44.0                           | 124.8                      | +183.6%        |
-| Male             | 44.0                           | 125.5                      | +185.2%        |
-| Female           | 45.0                           | 123.9                      | +175.3%        |
-| No phone service | 42.0                           | 151.3                      | +260.2%        |
-| Single line      | 27.0                           | 119.0                      | +340.7%        |
-| Multiple lines   | 58.0                           | 115.6                      | +99.3%         |
-| Bank transfer    | 54.0                           | 233.5                      | +332.4%        |
-| Credit card      | 53.0                           | 234.1                      | +341.7%        |
-| Electronic check | 42.0                           | 40.1                       | -4.5%          |
-| Mailed check     | 22.0                           | 200.8                      | +813.6%        |
+| Customer Group | Non-parametric Median (months) | Parametric Median (months) | Difference (%) |
+|-----------------|--------------------|------------------|-----------------|
+| Overall | 44.0 | 124.8 | +183.6% |
+| Male | 44.0 | 125.5 | +185.2% |
+| Female | 45.0 | 123.9 | +175.3% |
+| No phone service | 42.0 | 151.3 | +260.2% |
+| Single line | 27.0 | 119.0 | +340.7% |
+| Multiple lines | 58.0 | 115.6 | +99.3% |
+| Bank transfer | 54.0 | 233.5 | +332.4% |
+| Credit card | 53.0 | 234.1 | +341.7% |
+| Electronic check | 42.0 | 40.1 | -4.5% |
+| Mailed check | 22.0 | 200.8 | +813.6% |
 
 Several key differences emerged between our parametric and non-parametric analyses:
 
@@ -275,11 +265,8 @@ Several key differences emerged between our parametric and non-parametric analys
 
 4.  **Magnitude of differences**: The parametric approach generally estimated much larger differences between groups than the non-parametric approach. The most extreme discrepancy was for mailed check customers, where the Weibull model estimate was over 800% higher than the Kaplan-Meier estimate.
 
-
-
 ## Regression Analysis
 
 # Conclusion
-
 
 # Appendix
