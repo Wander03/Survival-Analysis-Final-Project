@@ -1,7 +1,12 @@
 ---
 title: "Final Project Report"
 author: "Kyle Bistrain, Dechen (Abby) Drongpa, Andrew Kerr, Liam Quach"
-format: html
+format: 
+  html:
+    toc: true
+    number-sections: true
+    code-fold: true
+    css: styles.css
 editor: visual
 embed-resources: true
 ---
