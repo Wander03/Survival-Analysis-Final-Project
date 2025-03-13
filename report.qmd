@@ -70,33 +70,58 @@ tele %>%
   geom_histogram(bins = 40, fill = "cornflowerblue", color = "black")
 ```
 
-
 # Introduction
 
-[Look at README and put formatted info here]
+\[Look at README and put formatted info here\]
 
 # Main Report
+
 ## Parametric Survival Analysis
 
-TODO:
-- select distribution -> explain why
-- construct survival and hazard functions for all obs -> describe observations
-- examine survival functions for different groups of interest and report
-- report mean and median survival times for all obs & examined groups
+Based on the probability plots in *Figure 1*, none of the four distributions fit this data well since the points do not fall close to the diagonal line for the lower half of the values. Therefore, we will rely on the Anderson Darling test statistic to determine the best fit. Although all four AD test statistics are close, the one for the Weibull distribution is the lowest (AD = 16986.795) and thus this distribution is the best fit.
 
-```{r}
+![Figure 1. Probability Plots for Customer Churn Time Data by Distribution: Weibull (top left), Exponential (top right), Lognormal (bottom left), Logistic (bottom right)](images/parametric_analysis_plots.png){fig-align="center"}
 
-```
+From the survival curve in *Figure 2*, we notice a steep decrease in survival probability for individuals who have been with the company for fewer months, then a more gradual decrease after the individual has been with the company for roughly 200 months (approx. 16.67 years). The hazard curve displays a high risk of the customer discontinuing use of the company's services within the first few months, then a steep decrease in risk afterwords.
 
+The mean survival time across all customers is 303.747 months while the median survival time is 124.766 months.
+
+![Figure 2. Survival Plot (left) and Hazard Plot (right) for all individuals under the Weibull Distribution](images/parametric_analysis_plots_2.png){fig-align="center"}
+
+We have decided to examine the survival and hazard curves of the following groups: the customers gender (Male. Female), whether the customer has multiple phone lines in service (Yes, No, No phone service), and the customers payment method (Electronic check, Mailed check, Bank transfer, Credit card).
+
+### Gender
+
+Based on the survival curves in *Figure 3*, the survival probability for female customers is slightly greater than that of male customers for any time $t$. However, hazard curves display the risk of male and female customers discontinuing use of the company's services is roughly the same for any time $t$.
+
+The mean survival times by customer gender is 297.221 months (male) and 310.109 months (female) while the median survival times are 125.489 months (male) and 123.929 months (female).
+
+From these observations, we can conclude that female customers tend to continue using the company's services longer than male customers.
+
+![Figure 3. Survival Plot (left) and Hazard Plot (right) by Gender under the Weibull Distribution](images/parametric_analysis_plots_gender.png){fig-align="center"}
+
+### Multiple Phone Lines
+
+Based on the survival curves in *Figure 4*, the survival probability for customers without phone service is greater than that for customers with phone service across all time $t$. Additionally, the survival probability for customers with one line is greater than that for customers with multiple lines for all times $t$. Meanwhile the hazard curves mirror this conclusion, since customers with multiple phone lines have a greater risk of discontinuing use of the company's services than customers with one or no phone lines for all time $t$.
+
+The mean survival times by amount of phone lines is 387.146 months (One Line), 194.881 months (Multiple Lines) and 431.113 months (No Lines) while the median survival times are 118.954 months (One Line), 115.632 months (Multiple Lines) and 151.271 months (No Lines).
+
+In other words, the fewer the amount of phone lines the customer is paying the company for, the longer the customers tends to use the company's services.
+
+![Figure 4. Survival Plot (left) and Hazard Plot (right) by Multiple Phone Lines under the Weibull Distribution](images/parametric_analysis_plots_multiplelines.png){fig-align="center"}
+
+### Payment Method
+
+Based on the survival curves in *Figure 5*, the survival probability for customers who pay through mailed check is greater than other methods after roughly 500 months. On the other hand customers that pay through electronic check have the lowest survival probability of the methods across all time $t$, with customers who pay through bank transfer or credit card (both automatic methods) having the greatest survival probability prior to 500 months, both having roughly the same probability. The hazard curves show that customers who pay through electronic check have the greatest risk of discontinuing use of the company's services across all time $t$, with the other payment methods being roughly equivalent.
+
+The mean survival times by payment method is 399.551 months (Bank Transfer), 375.861 months (Credit Card), 85.7733 months (Electronic Check) and 778.702 months (Mailed Check) while the median survival times are 233.482 months (Bank Transfer), 234.105 months (Credit Card), 40.0773 months (Electronic Check) and 200.804 months (Mailed Check).
+
+These curves show us that customers who pay through electronic check tend to stay with the company the shortest amount of time, while customers who pay through mailed check the longest.
+
+![Figure 5. Survival Plot (left) and Hazard Plot (right) by Payment Method under the Weibull Distribution](images/parametric_analysis_plots_paymentmethod.png){fig-align="center"}
 
 ## Non-parametric Survival Analysis
 
-
-
 ## Regression Analysis
 
-
-
 # Conclusion
-
-
