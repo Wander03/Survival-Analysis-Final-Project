@@ -143,9 +143,9 @@ ggsurvplot(km_fit_all,
            title = "Kaplan-Meier Curve - Overall")
 ```
 
-Our non-parametric analysis reveals that the median survival time (time at which 50% of customers have churned) across all customers is 44 months, considerably shorter than the 124.766 months estimated by the Weibull model. This substantial difference suggests that the parametric approach may be overestimating customer retention times.
+The overall Kaplan-Meier curve shows a rapid decline in survival probability during the first few months of service, indicating that new customers are at the highest risk of churning. The median survival time was not reached within our observation period, meaning that more than 50% of all customers remained with the company at the end of the study period.
 
-The Kaplan-Meier survival curve shows a steep decrease in survival probability during the first few months of service, indicating that new customers are at high risk of churning early in their relationship with the company.
+This aligns with our parametric analysis using the Weibull distribution, which showed a high hazard rate in the early months followed by a steep decline.
 
 ### Survival by Gender
 
@@ -171,12 +171,20 @@ When analyzing customer churn by gender using the Kaplan-Meier method, we found 
 
 | Gender | Median Survival (months) | Mean Survival (months) |
 |--------|--------------------------|------------------------|
-| Male   | 44                       | 40.9                   |
-| Female | 45                       | 41.2                   |
+| Male   | NA                       | 54.9                   |
+| Female | NA                       | 54.1                   |
 
-The log-rank test comparing male and female survival curves yields a p-value of 0.8. This indicates no statistically significant difference in survival patterns between genders, suggesting that gender has virtually no impact on customer retention rates.
+The Kaplan-Meier survival curves by gender show that female customers have slightly higher survival probabilities than male customers, though the difference is not dramatic. The corresponding hazard curves are nearly identical for both genders.
 
-This non-parametric finding differs from our parametric analysis, which suggested female customers having slightly better retention than male customers. The Weibull model estimated mean survival times of 297.221 months for males and 310.109 months for females, implying a gender effect that is not supported by our non-parametric approach. This discrepancy highlights how parametric assumptions may sometimes lead to conclusions that aren't substantiated when fewer distributional assumptions are made.
+The log-rank test comparing male and female survival curves yielded a chi-square statistic of 0.53 with a p-value of 0.23, indicating no statistically significant difference in survival experiences between genders.
+
+These non-parametric findings are consistent with our parametric Weibull analysis, which found:
+
+- Mean survival times: 297.221 months (male) vs. 310.109 months (female)
+
+- Median survival times: 125.489 months (male) vs. 123.929 months (female)
+
+Both approaches suggest that while female customers may show slightly higher retention overall, the differences are minimal and not statistically significant.
 
 ### Survival by Multiple Phone Lines
 
@@ -200,9 +208,9 @@ The Kaplan-Meier analysis by phone service configuration revealed meaningful dif
 
 | Phone Service    | Median Survival (months) | Mean Survival (months) |
 |------------------|--------------------------|------------------------|
-| No phone service | 42                       | 39.9                   |
-| Single line      | 27                       | 31.5                   |
-| Multiple lines   | 58                       | 51.3                   |
+| No phone service | NA                       | 55.1                   |
+| Single line      | NA                       | 52.6                   |
+| Multiple lines   | NA                       | 56.9                   |
 
 The log-rank test comparing these groups yielded a highly significant p-value (p \< 0.00001), confirming substantial differences in survival patterns across these customer segments.
 
@@ -230,41 +238,14 @@ Our non-parametric analysis by payment method revealed substantial differences i
 
 | Payment Method   | Median Survival (months) | Mean Survival (months) |
 |------------------|--------------------------|------------------------|
-| Bank transfer    | 54                       | 48.9                   |
-| Credit card      | 53                       | 47.9                   |
-| Electronic check | 42                       | 39.7                   |
-| Mailed check     | 22                       | 27.0                   |
+| Bank transfer    | NA                       | 63.0                   |
+| Credit card      | NA                       | 63.8                   |
+| Electronic check | 47                       | 41.2                   |
+| Mailed check     | NA                       | 56.4                   |
 
 The log-rank test comparing these payment methods yielded a p-value \< 0.00001, indicating highly significant differences in survival patterns across these customer segments.
 
-Our non-parametric findings partially align with the parametric results in identifying electronic check as a payment method associated with shorter customer tenure. However, they contradict the parametric finding that mailed check customers have the longest retention. In our non-parametric analysis, automatic payment methods (bank transfer and credit card) show the best retention, while mailed check customers have the poorest retention.
-
-### Comparison with Parametric Analysis
-
-To better understand the differences between our non-parametric and parametric approaches, we directly compared the survival time estimates produced by both methods:
-
-| Customer Group | Non-parametric Median (months) | Parametric Median (months) | Difference (%) |
-|-----------------|--------------------|------------------|-----------------|
-| Overall | 44.0 | 124.8 | +183.6% |
-| Male | 44.0 | 125.5 | +185.2% |
-| Female | 45.0 | 123.9 | +175.3% |
-| No phone service | 42.0 | 151.3 | +260.2% |
-| Single line | 27.0 | 119.0 | +340.7% |
-| Multiple lines | 58.0 | 115.6 | +99.3% |
-| Bank transfer | 54.0 | 233.5 | +332.4% |
-| Credit card | 53.0 | 234.1 | +341.7% |
-| Electronic check | 42.0 | 40.1 | -4.5% |
-| Mailed check | 22.0 | 200.8 | +813.6% |
-
-Several key differences emerged between our parametric and non-parametric analyses:
-
-1.  **Overall survival times**: The non-parametric approach yielded much shorter median survival times compared to the Weibull model, with the parametric approach overestimating median retention by 184% on average. Only for electronic check customers were the estimates similar between methods.
-
-2.  **Multiple phone lines impact**: The parametric analysis suggested that fewer phone lines correlate with better retention, while the non-parametric analysis showed customers with multiple lines having better retention than those with a single line. This contradiction highlights the sensitivity of survival estimates to modeling assumptions.
-
-3.  **Payment method influence**: Both approaches identified electronic check as associated with poorer retention, but they differed on which payment method correlates with the best retention. The non-parametric analysis showed automatic payment methods as superior, while the parametric approach suggested mailed checks lead to the longest customer relationships.
-
-4.  **Magnitude of differences**: The parametric approach generally estimated much larger differences between groups than the non-parametric approach. The most extreme discrepancy was for mailed check customers, where the Weibull model estimate was over 800% higher than the Kaplan-Meier estimate.
+Our non-parametric findings partially align with the parametric results in identifying electronic check as a payment method associated with shorter customer tenure. However, they contradict the parametric finding that mailed check customers have the longest retention. In our non-parametric analysis, automatic payment methods (bank transfer and credit card) show the best retention, while electronic check customers have the poorest retention.
 
 ## Regression Analysis
 
