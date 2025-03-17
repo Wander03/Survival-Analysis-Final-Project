@@ -180,9 +180,9 @@ The log-rank test comparing male and female survival curves yielded a chi-square
 
 These non-parametric findings are consistent with our parametric Weibull analysis, which found:
 
-- Mean survival times: 297.221 months (male) vs. 310.109 months (female)
+-   Mean survival times: 297.221 months (male) vs. 310.109 months (female)
 
-- Median survival times: 125.489 months (male) vs. 123.929 months (female)
+-   Median survival times: 125.489 months (male) vs. 123.929 months (female)
 
 Both approaches suggest that while female customers may show slightly higher retention overall, the differences are minimal and not statistically significant.
 
@@ -249,6 +249,140 @@ Our non-parametric findings partially align with the parametric results in ident
 
 ## Regression Analysis
 
-# Conclusion
+To explore semi-parametric approaches, we applied Cox regression methodologies to model customer churn, offering flexibility by not requiring a specific baseline hazard distribution. A key assumption that must hold up is the proportional hazards assumption which allows for precise estimates. Cox proportional hazards analyzes the customer behavior over time, allowing us to quantify how various service features and customer characteristics influence the instantaneous risk of churn throughout different tenure periods while controlling for other factors.
+
+
+### Full Main Effects Cox Regression Model
+```{r}
+cox_model_full <- coxph(Surv(tenure, Churn) ~ 
+                        as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
+                        as.factor(Dependents) + as.factor(PhoneService) + 
+                        as.factor(MultipleLines) + as.factor(InternetService) + 
+                        as.factor(OnlineSecurity) + as.factor(OnlineBackup)
+                        + as.factor(DeviceProtection) + as.factor(TechSupport) + 
+                        as.factor(StreamingTV) + as.factor(StreamingMovies) + 
+                        as.factor(Contract) + as.factor(PaperlessBilling) + 
+                        as.factor(PaymentMethod) + MonthlyCharges + TotalCharges,
+                        data = tele)
+anova(cox_model_full)
+```
+### Influential Observations
+
+We fit the full main effects cox regression model and must assess the influential observations in the model. To do so, we will filter out deviance and score residuals beyond 3 standard deviations to ensure the stability of the model coefficients. While this removal impacts the generalization of the model, we can still generalize to customers where the characteristics resemble the observations in the model. 
+
+```{r}
+dev_resid <- residuals(cox_model_full, type = "deviance")
+influential <- which(abs(dev_resid) > 3)
+      
+dev_resid[influential]
+
+
+# score_resid <- residuals(cox_model_full, type = "score")
+# which(abs(score_resid) > 3)
+```
+### Stepwise Variable Selection
+Following the removal of influential points, we proceed to stepwise model selection using AIC to select the best model from the main effect model. 
+
+```{r, message = FALSE, }
+cox_model_full <- coxph(Surv(tenure, Churn) ~ 
+                        as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
+                        as.factor(Dependents) + as.factor(PhoneService) + 
+                        as.factor(MultipleLines) + as.factor(InternetService) + 
+                        as.factor(OnlineSecurity) + as.factor(OnlineBackup)
+                        + as.factor(DeviceProtection) + as.factor(TechSupport) + 
+                        as.factor(StreamingTV) + as.factor(StreamingMovies) + 
+                        as.factor(Contract) + as.factor(PaperlessBilling) + 
+                        as.factor(PaymentMethod) + MonthlyCharges + TotalCharges,
+                        subset = -c(influential),
+                        data = tele)
+step_model <- step(cox_model_full, k = 2 ,direction = "both")
+```
+
+```{r}
+anova(step_model)
+```
+
+The remaining insignificant variables must be manually removed from the model using a bonferroni adjustment dividing the $\alpha = .05$ by 11 for a 0.00455 cutoff value. This allows us to remove MultipleLines from the model.
+
+
+```{r}
+FinalModel <- coxph(Surv(tenure, Churn) ~ 
+                        as.factor(Partner) + as.factor(InternetService) + 
+                        as.factor(OnlineSecurity) + as.factor(DeviceProtection) +
+                        as.factor(StreamingTV) + as.factor(StreamingMovies) + 
+                        as.factor(Contract) + as.factor(PaperlessBilling) + 
+                        as.factor(PaymentMethod) + TotalCharges,
+                        subset = -c(influential),
+                        data = tele)
+
+
+summary(FinalModel)
+```
+```{r}
+# score_resid <- residuals(FinalModel, type = "score")
+# which(abs(score_resid) > 1000)
+```
+
+```{r}
+anova(FinalModel)
+
+```
+
+```{r}
+anova(cox_model_full, FinalModel)
+```
+
+### Proportional Hazard Assumption
+
+The proportional hazards assumption must hold for the predictor variables in the Cox regression model. After conducting the formal test for proportional hazards, only the contract passes at $\alpha = .05$, confirming the proportional hazards assumption. This is a major drawback of this model because most of these predictor variables do not follow this assumption. Despite this limitation, we will proceed with interpreting the final model, acknowledging that results for variables other than the contract may not be accurate.
+
+```{r}
+cr.zph <- cox.zph(FinalModel, transform = "log")
+cr.zph
+plot(cr.zph)
+```
+### Hazard Ratios and Interpretations
+
+
+ (Contract)
+ 
+After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with one-year contracts have a 67% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
+
+We are 95% confident that the true hazard of churning with a one-year contract is between 59.9%% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
+
+
+After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with two-year contracts have a 98.4% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time. 
+
+We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
+
+
+(Total Charges)
+
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Payment Method. For each one dollar increase in TotalCharges, the risk of churning decreases by 0.165% . While this is a significant predictor, the effect is quite small for customers with low TotalCharges or small changes in the Total Charges. 
+
+
+(Payment Method)
+
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using automatic credit card payments have a 0.4% lower hazard of churning compared to those using bank transfers, regardless of tenure time. 
+
+We are 95% confident that the true hazard of churning with credit card payments is between 17.1% lower and 19.7% higher than the hazard of churning with bank transfers. This has a non-significant p-value of 0.966.
+
+
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using electronic checks have a 52.3% higher hazard of churning compared to those using bank transfers, regardless of tenure time. 
+
+We are 95% confident that the true hazard of churning with electronic checks is between 31.5% and 76.3% higher than the hazard of churning with bank transfers. This has a highly significant p-value < .001.
+
+
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using mailed checks have a 70.7% higher hazard of churning compared to those using bank transfers, regardless of tenure time. 
+
+We are 95% confident that the true hazard of churning with mailed checks is between 42.9% and 104.0% higher than the hazard of churning with bank transfers. This has a highly significant p-value < .001.
+
+
+After fitting these Cox Regression models, it is clear that contract type was a strong indicator of the hazard of customer churning because it is the only variable that passed the proportional hazards assumptions. That being said, additional transformations and another type of hazard model may better capture the hazard risk. In comparison to our parametric and non-parametric approaches demonstrated similar results to the nonparametric results indicating that Gender is not a statistically significant predictor of the hazard of churning. Finally, while the Payment method showed statistically significant associations with churn risk in the Cox regression model, we must interpret these results with caution since this variable violated the proportional hazards assumption, suggesting that its effect on churn hazard may change over different tenure durations.
+
+
+### Conclusion
+
+
 
 # Appendix
