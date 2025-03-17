@@ -79,7 +79,42 @@ tele %>%
 
 # Introduction
 
-\[Look at README and put formatted info here\]
+The Telco Customer Churn dataset is a fictional dataset created by IBM to simulate customer data for a telecommunications company. This dataset was designed to help predict customer churn, referring to customers who stop using the company’s services, with the goal of analyzing customer behavior and developing strategies to retain customers.
+
+### Creation of Dataset
+
+This dataset simulates customer data for a telecommunications company that provided home phone and Internet services to 7043 customers in California during the third quarter.
+
+### Variables
+
+The dataset contains 21 columns:
+
+-   CustomerID: A unique identifier for each customer.
+-   Gender: The gender of the customer (Male, Female).
+-   SeniorCitizen: Indicates whether the customer is a senior citizen (1 for Yes, 0 for No).
+-   Partner: Indicates whether the customer has a partner (Yes, No).
+-   Dependents: Indicates whether the customer has dependents (Yes, No).
+-   Tenure: The number of months the customer has been with the company.
+-   PhoneService: Indicates whether the customer has a phone service (Yes, No).
+-   MultipleLines: Indicates whether the customer has multiple lines (Yes, No, No phone service).
+-   InternetService: The type of internet service the customer has (DSL, Fiber optic, No).
+-   OnlineSecurity: Indicates whether the customer has online security (Yes, No, No internet service).
+-   OnlineBackup: Indicates whether the customer has online backup (Yes, No, No internet service).
+-   DeviceProtection: Indicates whether the customer has device protection (Yes, No, No internet service).
+-   TechSupport: Indicates whether the customer has tech support (Yes, No, No internet service).
+-   StreamingTV: Indicates whether the customer has streaming TV (Yes, No, No internet service).
+-   StreamingMovies: Indicates whether the customer has streaming movies (Yes, No, No internet service).
+-   Contract: The type of contract the customer has (Month-to-month, One year, Two year).
+-   PaperlessBilling: Indicates whether the customer has paperless billing (Yes, No).
+-   PaymentMethod: The payment method used by the customer (Electronic check, Mailed check, Bank transfer, Credit card).
+-   MonthlyCharges: The amount charged to the customer monthly.
+-   TotalCharges: The total amount charged to the customer over the tenure.
+-   Churn: Indicates whether the customer churned (Yes, No).
+
+### Time to Event and Censoring Variables
+
+-   Time to event variable: tenure (Column 6).
+-   Censoring variable: Churn (Column 21).
 
 # Main Report
 
@@ -251,8 +286,8 @@ Our non-parametric findings partially align with the parametric results in ident
 
 To explore semi-parametric approaches, we applied Cox regression methodologies to model customer churn, offering flexibility by not requiring a specific baseline hazard distribution. A key assumption that must hold up is the proportional hazards assumption which allows for precise estimates. Cox proportional hazards analyzes the customer behavior over time, allowing us to quantify how various service features and customer characteristics influence the instantaneous risk of churn throughout different tenure periods while controlling for other factors.
 
-
 ### Full Main Effects Cox Regression Model
+
 ```{r}
 cox_model_full <- coxph(Surv(tenure, Churn) ~ 
                         as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
@@ -266,9 +301,10 @@ cox_model_full <- coxph(Surv(tenure, Churn) ~
                         data = tele)
 anova(cox_model_full)
 ```
+
 ### Influential Observations
 
-We fit the full main effects cox regression model and must assess the influential observations in the model. To do so, we will filter out deviance and score residuals beyond 3 standard deviations to ensure the stability of the model coefficients. While this removal impacts the generalization of the model, we can still generalize to customers where the characteristics resemble the observations in the model. 
+We fit the full main effects cox regression model and must assess the influential observations in the model. To do so, we will filter out deviance and score residuals beyond 3 standard deviations to ensure the stability of the model coefficients. While this removal impacts the generalization of the model, we can still generalize to customers where the characteristics resemble the observations in the model.
 
 ```{r}
 dev_resid <- residuals(cox_model_full, type = "deviance")
@@ -280,8 +316,10 @@ dev_resid[influential]
 # score_resid <- residuals(cox_model_full, type = "score")
 # which(abs(score_resid) > 3)
 ```
+
 ### Stepwise Variable Selection
-Following the removal of influential points, we proceed to stepwise model selection using AIC to select the best model from the main effect model. 
+
+Following the removal of influential points, we proceed to stepwise model selection using AIC to select the best model from the main effect model.
 
 ```{r, message = FALSE, }
 cox_model_full <- coxph(Surv(tenure, Churn) ~ 
@@ -304,7 +342,6 @@ anova(step_model)
 
 The remaining insignificant variables must be manually removed from the model using a bonferroni adjustment dividing the $\alpha = .05$ by 11 for a 0.00455 cutoff value. This allows us to remove MultipleLines from the model.
 
-
 ```{r}
 FinalModel <- coxph(Surv(tenure, Churn) ~ 
                         as.factor(Partner) + as.factor(InternetService) + 
@@ -318,6 +355,7 @@ FinalModel <- coxph(Surv(tenure, Churn) ~
 
 summary(FinalModel)
 ```
+
 ```{r}
 # score_resid <- residuals(FinalModel, type = "score")
 # which(abs(score_resid) > 1000)
@@ -341,48 +379,39 @@ cr.zph <- cox.zph(FinalModel, transform = "log")
 cr.zph
 plot(cr.zph)
 ```
+
 ### Hazard Ratios and Interpretations
 
+(Contract)
 
- (Contract)
- 
 After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with one-year contracts have a 67% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
 
-We are 95% confident that the true hazard of churning with a one-year contract is between 59.9%% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
+We are 95% confident that the true hazard of churning with a one-year contract is between 59.9%% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value \< .001.
 
+After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with two-year contracts have a 98.4% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
 
-After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with two-year contracts have a 98.4% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time. 
-
-We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
-
+We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value \< .001.
 
 (Total Charges)
 
-After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Payment Method. For each one dollar increase in TotalCharges, the risk of churning decreases by 0.165% . While this is a significant predictor, the effect is quite small for customers with low TotalCharges or small changes in the Total Charges. 
-
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Payment Method. For each one dollar increase in TotalCharges, the risk of churning decreases by 0.165% . While this is a significant predictor, the effect is quite small for customers with low TotalCharges or small changes in the Total Charges.
 
 (Payment Method)
 
-After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using automatic credit card payments have a 0.4% lower hazard of churning compared to those using bank transfers, regardless of tenure time. 
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using automatic credit card payments have a 0.4% lower hazard of churning compared to those using bank transfers, regardless of tenure time.
 
 We are 95% confident that the true hazard of churning with credit card payments is between 17.1% lower and 19.7% higher than the hazard of churning with bank transfers. This has a non-significant p-value of 0.966.
 
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using electronic checks have a 52.3% higher hazard of churning compared to those using bank transfers, regardless of tenure time.
 
-After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using electronic checks have a 52.3% higher hazard of churning compared to those using bank transfers, regardless of tenure time. 
+We are 95% confident that the true hazard of churning with electronic checks is between 31.5% and 76.3% higher than the hazard of churning with bank transfers. This has a highly significant p-value \< .001.
 
-We are 95% confident that the true hazard of churning with electronic checks is between 31.5% and 76.3% higher than the hazard of churning with bank transfers. This has a highly significant p-value < .001.
+After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using mailed checks have a 70.7% higher hazard of churning compared to those using bank transfers, regardless of tenure time.
 
-
-After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using mailed checks have a 70.7% higher hazard of churning compared to those using bank transfers, regardless of tenure time. 
-
-We are 95% confident that the true hazard of churning with mailed checks is between 42.9% and 104.0% higher than the hazard of churning with bank transfers. This has a highly significant p-value < .001.
-
+We are 95% confident that the true hazard of churning with mailed checks is between 42.9% and 104.0% higher than the hazard of churning with bank transfers. This has a highly significant p-value \< .001.
 
 After fitting these Cox Regression models, it is clear that contract type was a strong indicator of the hazard of customer churning because it is the only variable that passed the proportional hazards assumptions. That being said, additional transformations and another type of hazard model may better capture the hazard risk. In comparison to our parametric and non-parametric approaches demonstrated similar results to the nonparametric results indicating that Gender is not a statistically significant predictor of the hazard of churning. Finally, while the Payment method showed statistically significant associations with churn risk in the Cox regression model, we must interpret these results with caution since this variable violated the proportional hazards assumption, suggesting that its effect on churn hazard may change over different tenure durations.
 
-
 ### Conclusion
-
-
 
 # Appendix
