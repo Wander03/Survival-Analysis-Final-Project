@@ -389,11 +389,11 @@ plot(cr.zph)
 
 After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with one-year contracts have an estimated 67% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
 
-We are 95% confident that the true hazard of churning with a one-year contract is between 59.9% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value \< .001.
+We are 95% confident that the true hazard of churning with a one-year contract is between 59.9% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
 
 After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with two-year contracts have an estimated 98.4% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
 
-We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value \< .001.
+We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
 
 (Total Charges)
 
@@ -418,6 +418,14 @@ We are 95% confident that the true hazard of churning with mailed checks is betw
 After fitting these Cox Regression models, it is clear that contract type was a strong indicator of the hazard of customer churning because it is the only variable that passed the proportional hazards assumptions. That being said, additional transformations and another type of hazard model may better capture the hazard risk. In comparison to our parametric and non-parametric approaches demonstrated similar results to the nonparametric results indicating that Gender is not a statistically significant predictor of the hazard of churning. Finally, while the Payment method showed statistically significant associations with churn risk in the Cox regression model, we must interpret these results with caution since this variable violated the proportional hazards assumption, suggesting that its effect on churn hazard may change over different tenure duration.
 
 ### Conclusion
+
+This analysis provided valuable insights on customer churn in the telecommunications industry through parametric, non-parametric, and semi-parametric survival models. One of the most significant findings was that contract type, payment method, and total charges are key predictors of customer retention, while gender has little effect on customer churn.
+
+From the parametric survival analysis, we found that the Weibull distribution was the best fit, which shows a steep decline in survival probability during the first few months of tenure. This suggests that early-stage customer retention efforts are crucial. Customers with month-to-month contracts and electronic check payments** experienced the highest churn rates, whereas those on two-year contracts or using automated payment methods exhibited longer retention periods.
+
+The non-parametric Kaplan-Meier analysis reinforced these findings, showing that electronic check users had the lowest survival probabilities. However, an interesting contradiction emerged in the survival patterns of customers with multiple phone lines, the non-parametric results suggested better retention for multiple-line users, while the parametric model suggested the opposite.
+
+Our Cox regression analysis further confirmed that longer contract durations significantly lower the hazard of churn, with two-year contracts reducing churn risk by nearly 98% compared to month-to-month plans. Additionally, higher total charges correlated with lower churn risk, although the effect size was relatively small. However, a critical finding was that several predictors violated the proportional hazards assumption, indicating that their impact on churn may vary over time.
 
 # Appendix
 
@@ -468,4 +476,3 @@ survdiff(Surv(tenure, Churn) ~ PaymentMethod, data = tele, rho = 0)
 print(km_fit_payment, print.rmean = TRUE)
 
 ```
-
