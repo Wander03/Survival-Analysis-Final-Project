@@ -169,8 +169,8 @@ In this section, we employ non-parametric methods to analyze customer churn patt
 ### Overall Survival Experience
 
 ```{r}
+#| echo: false
 km_fit_all <- survfit(Surv(tenure, Churn) ~ 1, data = tele)
-
 ggsurvplot(km_fit_all, 
            data = tele,
            xlab = "Time", 
@@ -185,6 +185,7 @@ This aligns with our parametric analysis using the Weibull distribution, which s
 ### Survival by Gender
 
 ```{r}
+#| echo: false
 km_fit_gender <- survfit(Surv(tenure, Churn) ~ gender, data = tele)
 
 ggsurvplot(km_fit_gender, 
@@ -224,6 +225,7 @@ Both approaches suggest that while female customers may show slightly higher ret
 ### Survival by Multiple Phone Lines
 
 ```{r}
+#| echo: false
 km_fit_lines <- survfit(Surv(tenure, Churn) ~ MultipleLines, data = tele)
 
 ggsurvplot(km_fit_lines, 
@@ -254,6 +256,7 @@ Interestingly, these non-parametric results contradict our parametric findings. 
 ### Survival by Payment Method
 
 ```{r}
+#| echo: false
 km_fit_payment <- survfit(Surv(tenure, Churn) ~ PaymentMethod, data = tele)
 
 ggsurvplot(km_fit_payment, 
@@ -417,3 +420,52 @@ After fitting these Cox Regression models, it is clear that contract type was a 
 ### Conclusion
 
 # Appendix
+
+### Non-parametric code
+
+```{r}
+#| eval: false
+#| code-fold: false
+km_fit_all <- survfit(Surv(tenure, Churn) ~ 1, data = tele)
+
+ggsurvplot(km_fit_all, 
+           data = tele,
+           xlab = "Time", 
+           ylab = "Survival Probability",
+           title = "Kaplan-Meier Curve - Overall")
+
+
+km_fit_gender <- survfit(Surv(tenure, Churn) ~ gender, data = tele)
+
+ggsurvplot(km_fit_gender, 
+           data = tele,
+           pval = TRUE,
+           title = "Kaplan-Meier Curves by Payment Method")
+
+km_fit_lines <- survfit(Surv(tenure, Churn) ~ MultipleLines, data = tele)
+
+survdiff(Surv(tenure, Churn) ~ gender, data = tele, rho = 0)
+
+print(km_fit_gender, print.rmean = TRUE)
+
+ggsurvplot(km_fit_lines, 
+           data = tele,
+           pval = TRUE,
+           title = "Kaplan-Meier Curves by Multiple Phone Lines")
+
+survdiff(Surv(tenure, Churn) ~ MultipleLines, data = tele, rho = 0)
+print(km_fit_lines, print.rmean = TRUE)
+
+km_fit_payment <- survfit(Surv(tenure, Churn) ~ PaymentMethod, data = tele)
+
+ggsurvplot(km_fit_payment, 
+           data = tele,
+           pval = TRUE,
+           title = "Kaplan-Meier Curves by Payment Method")
+
+survdiff(Surv(tenure, Churn) ~ PaymentMethod, data = tele, rho = 0)
+
+print(km_fit_payment, print.rmean = TRUE)
+
+```
+
