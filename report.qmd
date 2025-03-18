@@ -1,5 +1,5 @@
 ---
-title: "Final Project Report"
+title: "Customer Churn Survival Analysis"
 author: "Kyle Bistrain, Dechen (Abby) Drongpa, Andrew Kerr, Liam Quach"
 format: 
   html:
@@ -113,8 +113,8 @@ The dataset contains 21 columns:
 
 ### Time to Event and Censoring Variables
 
--   Time to event variable: tenure (Column 6).
--   Censoring variable: Churn (Column 21).
+-   Time to event variable: Amount of months until the customers discontinues service with the company (represented by the column tenure).
+-   Right Censoring: Right censoring may occur if a customer does not discontinue service with the company throughout the time of the study (represented by the column Churn).
 
 # Main Report
 
@@ -175,7 +175,8 @@ ggsurvplot(km_fit_all,
            data = tele,
            xlab = "Time", 
            ylab = "Survival Probability",
-           title = "Kaplan-Meier Curve - Overall")
+           title = "Kaplan-Meier Curve - Overall",
+           caption = "Figure 6. Overall Survival Curve")
 ```
 
 The overall Kaplan-Meier curve shows a rapid decline in survival probability during the first few months of service, indicating that new customers are at the highest risk of churning. The median survival time was not reached within our observation period, meaning that more than 50% of all customers remained with the company at the end of the study period.
@@ -191,7 +192,8 @@ km_fit_gender <- survfit(Surv(tenure, Churn) ~ gender, data = tele)
 ggsurvplot(km_fit_gender, 
            data = tele,
            pval = TRUE,
-           title = "Kaplan-Meier Curves by Payment Method")
+           title = "Kaplan-Meier Curves by Payment Method",
+           caption = "Figure 7. Survival Curve by Gender")
 ```
 
 ```{r}
@@ -231,7 +233,8 @@ km_fit_lines <- survfit(Surv(tenure, Churn) ~ MultipleLines, data = tele)
 ggsurvplot(km_fit_lines, 
            data = tele,
            pval = TRUE,
-           title = "Kaplan-Meier Curves by Multiple Phone Lines")
+           title = "Kaplan-Meier Curves by Multiple Phone Lines",
+           caption = "Figure 8. Survival Curve by Amount of Phone Lines")
 ```
 
 ```{r}
@@ -262,7 +265,8 @@ km_fit_payment <- survfit(Surv(tenure, Churn) ~ PaymentMethod, data = tele)
 ggsurvplot(km_fit_payment, 
            data = tele,
            pval = TRUE,
-           title = "Kaplan-Meier Curves by Payment Method")
+           title = "Kaplan-Meier Curves by Payment Method",
+           caption = "Figure 9. Survival Curve by Payment Method")
 ```
 
 ```{r}
@@ -292,6 +296,7 @@ To explore semi-parametric approaches, we applied Cox regression methodologies t
 ### Full Main Effects Cox Regression Model
 
 ```{r}
+#| echo: false
 cox_model_full <- coxph(Surv(tenure, Churn) ~ 
                         as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
                         as.factor(Dependents) + as.factor(PhoneService) + 
@@ -310,6 +315,7 @@ anova(cox_model_full)
 We fit the full main effects cox regression model and must assess the influential observations in the model. To do so, we will filter out deviance and score residuals beyond 3 standard deviations to ensure the stability of the model coefficients. While this removal impacts the generalization of the model, we can still generalize to customers where the characteristics resemble the observations in the model.
 
 ```{r}
+#| include: false
 dev_resid <- residuals(cox_model_full, type = "deviance")
 influential <- which(abs(dev_resid) > 3)
       
@@ -324,7 +330,8 @@ dev_resid[influential]
 
 Following the removal of influential points, we proceed to stepwise model selection using AIC to select the best model from the main effect model.
 
-```{r, message = FALSE, }
+```{r}
+#| include: false
 cox_model_full <- coxph(Surv(tenure, Churn) ~ 
                         as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
                         as.factor(Dependents) + as.factor(PhoneService) + 
@@ -340,12 +347,14 @@ step_model <- step(cox_model_full, k = 2 ,direction = "both")
 ```
 
 ```{r}
+#| echo: false
 anova(step_model)
 ```
 
 The remaining insignificant variables must be manually removed from the model using a bonferroni adjustment dividing the $\alpha = .05$ by 11 for a 0.00455 cutoff value. This allows us to remove MultipleLines from the model.
 
 ```{r}
+#| include: false
 FinalModel <- coxph(Surv(tenure, Churn) ~ 
                         as.factor(Partner) + as.factor(InternetService) + 
                         as.factor(OnlineSecurity) + as.factor(DeviceProtection) +
@@ -360,16 +369,18 @@ summary(FinalModel)
 ```
 
 ```{r}
+#| include: false
 # score_resid <- residuals(FinalModel, type = "score")
 # which(abs(score_resid) > 1000)
 ```
 
 ```{r}
+#| echo: false
 anova(FinalModel)
-
 ```
 
 ```{r}
+#| include: false
 anova(cox_model_full, FinalModel)
 ```
 
@@ -378,30 +389,35 @@ anova(cox_model_full, FinalModel)
 The proportional hazards assumption must hold for the predictor variables in the Cox regression model. After conducting the formal test for proportional hazards, only the contract passes at $\alpha = .05$, confirming the proportional hazards assumption. This is a major drawback of this model because most of these predictor variables do not follow this assumption. Despite this limitation, we will proceed with interpreting the final model, acknowledging that results for variables other than the contract may not be accurate.
 
 ```{r}
+#| echo: false
 cr.zph <- cox.zph(FinalModel, transform = "log")
 cr.zph
+
+par(mfrow = c(4, 3), mar = c(2, 2, 2, 2), oma = c(2, 0, 0, 0)) 
 plot(cr.zph)
+mtext("Figure 10. Proportional Hazard Assumption Plots", side = 1, outer = TRUE, cex = 0.9)
+par(mfrow = c(1, 1))
 ```
 
 ### Hazard Ratios and Interpretations
 
-(Contract)
+#### Contract
 
 After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with one-year contracts have an estimated 67% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
 
-We are 95% confident that the true hazard of churning with a one-year contract is between 59.9% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
+We are 95% confident that the true hazard of churning with a one-year contract is between 59.9% and 72.9% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value \< .001.
 
 After adjusting for Partner, Internet Service, Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, Total Charges, and Payment Method, Customers with two-year contracts have an estimated 98.4% lower hazard of churning compared to those with month-to-month contracts, regardless of tenure time.
 
-We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value < .001.
+We are 95% confident that the true hazard of churning with a two-year contract is between 97.2% and 99.0% lower than the hazard of churning with month-to-month contracts. This has a highly significant p-value \< .001.
 
-(Total Charges)
+#### Total Charges
 
 After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Payment Method. For each one dollar increase in TotalCharges, the estimated hazard of churning decreases by 0.145% . While this is a significant predictor, the effect is quite small for customers with low TotalCharges or small changes in the Total Charges.
 
 We have 95% confidence that for every one dollar increase in TotalCharges, the true hazard of churning decreases by .138% and . 152%.
 
-(Payment Method)
+#### Payment Method
 
 After adjusting for Partner, Internet Service, Contract Online Security, Device Protection, Streaming TV, Streaming Movies, Paperless Billing, and Total Charges, Customers using automatic credit card payments have an estimated .4% lower hazard of churning compared to those using bank transfers, regardless of tenure time.
 
@@ -421,15 +437,53 @@ After fitting these Cox Regression models, it is clear that contract type was a 
 
 This analysis provided valuable insights on customer churn in the telecommunications industry through parametric, non-parametric, and semi-parametric survival models. One of the most significant findings was that contract type, payment method, and total charges are key predictors of customer retention, while gender has little effect on customer churn.
 
-From the parametric survival analysis, we found that the Weibull distribution was the best fit, which shows a steep decline in survival probability during the first few months of tenure. This suggests that early-stage customer retention efforts are crucial. Customers with month-to-month contracts and electronic check payments** experienced the highest churn rates, whereas those on two-year contracts or using automated payment methods exhibited longer retention periods.
+From the parametric survival analysis, we found that the Weibull distribution was the best fit, which shows a steep decline in survival probability during the first few months of tenure. This suggests that early-stage customer retention efforts are crucial. Customers with month-to-month contracts and electronic check payments experienced the highest churn rates, whereas those on two-year contracts or using automated payment methods exhibited longer retention periods.
 
 The non-parametric Kaplan-Meier analysis reinforced these findings, showing that electronic check users had the lowest survival probabilities. However, an interesting contradiction emerged in the survival patterns of customers with multiple phone lines, the non-parametric results suggested better retention for multiple-line users, while the parametric model suggested the opposite.
 
-Our Cox regression analysis further confirmed that longer contract durations significantly lower the hazard of churn, with two-year contracts reducing churn risk by nearly 98% compared to month-to-month plans. Additionally, higher total charges correlated with lower churn risk, although the effect size was relatively small. However, a critical finding was that several predictors violated the proportional hazards assumption, indicating that their impact on churn may vary over time.
+Our Cox regression analysis further confirmed that longer contract durations significantly lower the hazard of churn, with two-year contracts reducing churn risk by nearly 98% compared to month-to-month plans. Additionally, higher total charges correlated with lower churn risk, although the effect size was relatively small. However, several predictors violated the proportional hazards assumption, indicating that their impact on churn may vary over time.
 
 # Appendix
 
-### Non-parametric code
+### Data Cleaning 
+
+```{r}
+#| eval: FALSE
+#| code-fold: false
+
+library(tidyverse)
+library(here)
+library(survival)
+library(survminer)
+
+tele <- read_csv(here("data", "Telco-Customer-Churn-Clean.csv"))
+
+# Convert character columns to factors
+# Convert Churn (censoring variable) to 0 if right censored, otherwise 1
+tele <- tele %>%
+  mutate(
+    across(where(~length(unique(.)) < 4), ~ as.factor(.)),
+    Churn = case_when(
+      Churn == "Yes" ~ 1,
+      Churn == "No" ~ 0,
+      TRUE ~ NA
+      )
+    ) 
+
+# Check missing data
+#
+#   All 11 subjects are missing TotalCharges and have Churn = 0 and tenure = 0, 
+#   so I am guessing that they are brand new customers. THus, will impute 
+#   missing  values with 0.
+#
+tele %>%
+  filter(if_any(everything(), is.na))
+
+tele <- tele %>%
+  mutate(TotalCharges = replace_na(TotalCharges, 0))
+```
+
+### Non-parametric
 
 ```{r}
 #| eval: false
@@ -474,5 +528,65 @@ ggsurvplot(km_fit_payment,
 survdiff(Surv(tenure, Churn) ~ PaymentMethod, data = tele, rho = 0)
 
 print(km_fit_payment, print.rmean = TRUE)
+```
+
+### Cox Regression
+
+```{r}
+#| eval: false
+#| code-fold: false
+
+cox_model_full <- coxph(Surv(tenure, Churn) ~ 
+                        as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
+                        as.factor(Dependents) + as.factor(PhoneService) + 
+                        as.factor(MultipleLines) + as.factor(InternetService) + 
+                        as.factor(OnlineSecurity) + as.factor(OnlineBackup)
+                        + as.factor(DeviceProtection) + as.factor(TechSupport) + 
+                        as.factor(StreamingTV) + as.factor(StreamingMovies) + 
+                        as.factor(Contract) + as.factor(PaperlessBilling) + 
+                        as.factor(PaymentMethod) + MonthlyCharges + TotalCharges,
+                        data = tele)
+anova(cox_model_full)
+
+dev_resid <- residuals(cox_model_full, type = "deviance")
+influential <- which(abs(dev_resid) > 3)
+      
+dev_resid[influential]
+
+cox_model_full <- coxph(Surv(tenure, Churn) ~ 
+                        as.factor(gender) + as.factor(SeniorCitizen) + as.factor(Partner) +
+                        as.factor(Dependents) + as.factor(PhoneService) + 
+                        as.factor(MultipleLines) + as.factor(InternetService) + 
+                        as.factor(OnlineSecurity) + as.factor(OnlineBackup)
+                        + as.factor(DeviceProtection) + as.factor(TechSupport) + 
+                        as.factor(StreamingTV) + as.factor(StreamingMovies) + 
+                        as.factor(Contract) + as.factor(PaperlessBilling) + 
+                        as.factor(PaymentMethod) + MonthlyCharges + TotalCharges,
+                        subset = -c(influential),
+                        data = tele)
+step_model <- step(cox_model_full, k = 2 ,direction = "both")
+
+anova(step_model)
+
+FinalModel <- coxph(Surv(tenure, Churn) ~ 
+                        as.factor(Partner) + as.factor(InternetService) + 
+                        as.factor(OnlineSecurity) + as.factor(DeviceProtection) +
+                        as.factor(StreamingTV) + as.factor(StreamingMovies) + 
+                        as.factor(Contract) + as.factor(PaperlessBilling) + 
+                        as.factor(PaymentMethod) + TotalCharges,
+                        subset = -c(influential),
+                        data = tele)
+
+
+summary(FinalModel)
+
+anova(FinalModel)
+
+anova(cox_model_full, FinalModel)
+
+cr.zph <- cox.zph(FinalModel, transform = "log")
+cr.zph
+plot(cr.zph)
+
 
 ```
